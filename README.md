@@ -1,22 +1,38 @@
 # Capstone Project: Create a Customer Segmentation Report for Arvato Financial Services
 
+------
 ## 1. Project Definition
 
 ### 1.1. Project Overview
 
+Mail-order is the buying of goods or services by mail delivery. The buyer places an order for the desired products with the merchant through some remote method such as through a telephone call or web site. Then, the products are delivered to the address supplied by the customer.
+
+Direct marketing is a type of advertising campaign that seeks to bring an action in a selected group of consumers (such as an order, visit the store or the website of the mark or a request for information) in response of a direct communication initiated by the marketer. Some of the benefits of direct marketing campains are that it helps a company increase the sales with current and former clients (through direct marketing a company can communicate directly with current customers to keep alive the relationship bringing value, but also get back in touch with old customers and generate new sales opportunities) and through direct contact with the customers the company can create new business opportunities by customizing its promotions, emails and offers to create an instant bond. 
+  
+In this project we will analyze demographics data for customers that form the core customer base for a mail-order sales company located in Germany and compare it to the general population. We will than apply unsupervised learning techniques in order to perform customer segmentation, identifying the parts of the population that best describe the core customer base of the company, and afterwards create a supervised model that will predict which individuals should be targeted during direct marketing campaigns in order to have the highest ROI (return on investment).
+
 The data and outline of this project was provided by Arvato Financial Solutions, a Bertelsmann subsidiary.
 
-
----------
-In this project, you will analyze demographics data for customers of a mail-order sales company in Germany, comparing it against demographics information for the general population. You'll use unsupervised learning techniques to perform customer segmentation, identifying the parts of the population that best describe the core customer base of the company. Then, you'll apply what you've learned on a third dataset with demographics information for targets of a marketing campaign for the company, and use a model to predict which individuals are most likely to convert into becoming customers for the company. The data that you will use has been provided by our partners at Bertelsmann Arvato Analytics, and represents a real-life data science task.
-
----------
-Student provides a high-level overview of the project. Background information such as the problem domain, the project origin, and related data sets or input data is provided.
-In this section, look to provide a high-level overview of the project in layman’s terms. Questions to ask yourself when writing this section:
-    Has an overview of the project been provided, such as the problem domain, project origin, and related datasets or input data?
-    Has enough background information been given so that an uninformed reader would understand the problem domain and following problem statement?
-
 ### 1.2. Problem Statement
+
+When 
+
+
+
+
+    Take the segmentation and targeting. One of the great advantages of this type of marketing is that you can reach your specific audience segments with personalized messages. If you want to succeed, you should invest time in research to identify consumers most likely to convert and thus direct your efforts to actions that really work.
+
+
+    Optimize your marketing budget. Addressing online direct marketing to a specific audience allows you to set realistic goals and improve your sales on a tight budget. If you optimize and properly direct your campaign, you will achieve results with only a small percentage of the cost of traditional advertising.
+
+
+
+
+With direct marketing, companies are likely to have a benchmark success rate from previous similar campaigns that they can base their goals on. Companies can try to optimise it through various strategies, whether by trying to offer the best deals or by using behavioural tactics.
+
+One of the most successful ways to **optimise direct marketing** results is through machine learning.
+
+When using a large database for a direct marketing campaign, a key objective is to identify and remove prospects not likely to respond, or that represent a high risk to your organisation, to minimise time and resources spent on leads that won't result in ROI. By removing those not interested, you will improve your response rates: making your campaign more profitable.
 
 ---------
 The problem which needs to be solved is clearly defined. A strategy for solving the problem, including discussion of the expected solution, has been made.
@@ -28,6 +44,8 @@ In this section, you will want to clearly define the problem that you are trying
     Is an anticipated solution clearly defined? Will the reader understand what results you are looking for?
 
 ### 1.3. Metrics
+
+An essential aspect of direct marketing is that the consumer response is measurable.
 
 ---------
 Metrics used to measure performance of a model or result are clearly defined. Metrics are justified based on the characteristics of the problem.
