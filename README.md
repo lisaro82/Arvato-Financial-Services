@@ -15,7 +15,12 @@ The data and outline of this project was provided by Arvato Financial Solutions,
 
 ### 1.2. Problem Statement
 
-When 
+With traditional advertising methods, a company may be spending 1000 Euros for a billboard to advertise to 700 people in a day, with no control over demographic or being able to objectivly measure the impact of this investment. Usually the costs linked to marketing campaigns, represent an important part of the yearly budget. One way to optimize this budget is to address online direct marketing to a specific audience, which allows a company to set realistic goals and improve the sales whith a smaller budget. 
+
+Even if a direct markeing campaign represents a smaller investment done by a company, when using a large database for a direct marketing campaign, a key objective is to identify and remove prospects not likely to respond, or that represent a high risk to the organisation. This optimisation of the direct marketing campaign tends to minimise the time and resources spent on leads that won't result in ROI. By removing those not interested, the company will improve its response rates: making the campaign more profitable by being properly directed.
+
+In order to achieve results with only a small percentage of the cost of traditional advertising, a direct marketing campaign should be optimezed and properly directed. 
+ 
 
 
 
@@ -23,8 +28,7 @@ When
     Take the segmentation and targeting. One of the great advantages of this type of marketing is that you can reach your specific audience segments with personalized messages. If you want to succeed, you should invest time in research to identify consumers most likely to convert and thus direct your efforts to actions that really work.
 
 
-    Optimize your marketing budget. Addressing online direct marketing to a specific audience allows you to set realistic goals and improve your sales on a tight budget. If you optimize and properly direct your campaign, you will achieve results with only a small percentage of the cost of traditional advertising.
-
+    Optimize your marketing budget. 
 
 
 
@@ -32,7 +36,7 @@ With direct marketing, companies are likely to have a benchmark success rate fro
 
 One of the most successful ways to **optimise direct marketing** results is through machine learning.
 
-When using a large database for a direct marketing campaign, a key objective is to identify and remove prospects not likely to respond, or that represent a high risk to your organisation, to minimise time and resources spent on leads that won't result in ROI. By removing those not interested, you will improve your response rates: making your campaign more profitable.
+
 
 ---------
 The problem which needs to be solved is clearly defined. A strategy for solving the problem, including discussion of the expected solution, has been made.
