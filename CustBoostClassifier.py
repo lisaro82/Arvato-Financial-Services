@@ -1,10 +1,17 @@
+import pandas as pd
+import numpy as np
+
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import KFold  as CVFold
 
 from hyperopt import hp, tpe, fmin, space_eval, Trials
 
 import datetime
+import shutil
 import os
+
+import lightgbm as lgb
+
 
 class CustBoostClassifier():
     
@@ -66,14 +73,68 @@ class CustBoostClassifier():
     
     
     #----------------------------------------------------------------------------------------------------------------
+    def copyStackModels(self, p_top = 30):
+        print('\n***********************************************************************************************')
+        v_now       = datetime.datetime.today().strftime('%Y%m%d_%H%M')
+        v_destDir   = f'{self.__modelName__}_{v_now}'
+        v_src_files = f'models/saveTrain/'
+        v_stackDir  = f'models/stack/{v_destDir}'
+        if not os.path.exists(v_stackDir): os.makedirs(v_stackDir)
+
+        for item in self.__bayes_trials__[:p_top]:
+            print(item['iteration'], ' ... ', round(item['scoreValid'], 6), ' ... ', round(item['scoreTest'], 6))
+            # Copy the models to the stack folder
+            for idx in range(self.__cvSplits__):
+                v_fileName = f'model_{self.__modelName__}_{item["iteration"]}_{idx + 1}.txt'
+                v_fileName = os.path.join(v_src_files, v_fileName)
+                shutil.copy(v_fileName, v_stackDir)
+                
+        return v_destDir
+    
+    #----------------------------------------------------------------------------------------------------------------
     def predictStack(self, p_folder, X_data, y_data = None, p_showPlot = False):
         """ Function used to load all the models that will be used to create the predictions. """ 
+        self.__models__ = []
         for folder in p_folder:
             for (dirpath, dirnames, filenames) in os.walk(f'models/stack/{folder}'):
                 for filename in filenames:    
-                    bst = lgb.Booster(model_file = filename)
+                    bst = lgb.Booster(model_file = f'{dirpath}/{filename}')
                     self.__models__.append(bst)
-        return self.predictProba(X_data, y_data, p_showPlot)
+        return self.predictProba(X_data, y_data, p_showPlot) 
+    
+    
+    #----------------------------------------------------------------------------------------------------------------
+    def featureImportanceStack(self, p_folder, p_top = 30):
+        """ Function used to load all the models that will be used to create the predictions. """ 
+        self.__models__ = []
+        for folder in p_folder:
+            for (dirpath, dirnames, filenames) in os.walk(f'models/stack/{folder}'):
+                for filename in filenames:    
+                    bst = lgb.Booster(model_file = f'{dirpath}/{filename}')
+                    self.__models__.append(bst)
+                    
+        v_return = None
+        v_count = 0
+        for model in self.__models__:
+            v_count += 1
+            v_fold_df = pd.DataFrame()
+            v_fold_df["feature"] = model.feature_name()  
+            v_fold_df["importance_split"] = model.feature_importance(importance_type='split') 
+            v_fold_df["importance_gain"] = model.feature_importance(importance_type='gain')
+            if v_return is None:
+                v_return = v_fold_df.sort_values('importance_gain', ascending = False)
+            else:
+                v_return = v_return.merge(v_fold_df, how = 'inner', on = 'feature', suffixes = ('', f'_{v_count}'))
+
+        for column in ['importance_split', 'importance_gain']:
+            v_cols = [item for item in v_return.columns if column in item]
+            v_return[f'_{column}'] = v_return[v_cols].sum(axis = 1) / len(v_cols)
+            v_return.drop(v_cols, axis = 1, inplace = True)
+
+        v_return = v_return.sort_values('_importance_gain', ascending = False).reset_index(drop = True).head(p_top)
+        display(v_return)
+        
+        return v_return
     
     
     #----------------------------------------------------------------------------------------------------------------
@@ -136,7 +197,6 @@ class CustBoostClassifier():
                              num_boost_round        = v_num_boost_round,
                              valid_sets             = [lgb_train, lgb_valid],
                              feature_name           = self.__feature_name__,
-                             #categorical_feature=[21]
                              early_stopping_rounds  = 180,
                              verbose_eval           = p_verbose )
             v_fileName = f'models/saveTrain/model_{self.__modelName__}_{p_sufix}_{idx + 1}'
@@ -153,9 +213,14 @@ class CustBoostClassifier():
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def __scaleData__(self, X_data): 
+    def __scaleData__(self, X_data, p_train = False): 
         """ Returns a copy of the fead raw data. """ 
-        return X_data.copy()
+        if len(self.__selected_featuresIni__) == 0: return X_data.copy()
+            
+        if p_train:
+            self.__feature_name__ = [item for item in X_data.columns if item in self.__selected_featuresIni__]
+            
+        return X_data[self.__feature_name__].copy()
             
         
     #----------------------------------------------------------------------------------------------------------------
@@ -166,7 +231,6 @@ class CustBoostClassifier():
             self.__dataset_train__ = []
             self.__dataset_valid__ = []
             self.__validation__    = []
-            self.__feature_name__  = self.__X_train__.columns.tolist()
             
             # For cross validation add the training / validation datasets based on the CVFold splits
             if self.__cvSplits__ > 1:
@@ -199,26 +263,9 @@ class CustBoostClassifier():
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def bayesianSearchLGB( self, p_posWeight, p_max_eval, p_topTrials, X_test, y_test, p_verbose = False ):
+    def bayesianSearchLGB( self, p_hyper_space, p_posWeight, p_max_eval, X_test, y_test, p_verbose = False ):
         """ Execute the Bayesian Search for LGB models. It returns the best x model groups. """ 
-        v_hyper_space = { 'objective':           'binary',
-                          'n_estimators': 1000 + hp.randint('n_estimators', 1500),               
-                          'boosting_type': hp.choice('boosting_type', [
-                                                         { 'boosting_type': 'gbdt', 
-                                                           'subsample': hp.uniform('gdbt_subsample', 0.5, 1)}, 
-                                                         { 'boosting_type': 'dart', 
-                                                           'subsample': hp.uniform('dart_subsample', 0.5, 1)},
-                                                         { 'boosting_type': 'goss'} ]),
-                          'max_depth':         hp.quniform('max_depth', 1, 30, 1),
-                          'scale_pos_weight':  hp.quniform('scale_pos_weight', p_posWeight * 0.5, 
-                                                                               p_posWeight * 2, 
-                                                                               p_posWeight * 0.5),
-                          'num_leaves':        hp.quniform('num_leaves', 2, 150, 1),
-                          'learning_rate':     hp.loguniform('learning_rate', np.log(0.00001), np.log(0.2)),
-                          'min_child_samples': hp.quniform('min_child_samples', 20, 500, 5),
-                          'reg_alpha':         hp.uniform('reg_alpha', 0.0, 1.0),
-                          'reg_lambda':        hp.uniform('reg_lambda', 0.0, 1.0),
-                          'colsample_bytree':  hp.uniform('colsample_by_tree', 0.6, 1.0) }   
+        v_hyper_space  = p_hyper_space.copy() 
         v_bayes_trials = Trials()
         
         self.ITERATION = 0
@@ -289,20 +336,6 @@ class CustBoostClassifier():
                          max_evals  = p_max_eval, 
                          trials     = v_bayes_trials )
         
-        v_bayes_trials = sorted(v_bayes_trials.results, key=lambda x: x['loss'], reverse = False)
-                                       
-        print('\n***********************************************************************************************')
-        v_src_files = os.listdir(f'models/gbm_trials/')
-        v_now = datetime.datetime.today().strftime('%Y%m%d_%H%M')
-        v_stackDir = f'models/stack/{self.__modelName__}_{v_now}'
-        if not os.path.exists(v_stackDir):
-            os.makedirs(v_stackDir)
-        for item in v_bayes_trials[:p_topTrials]:
-            print(item['iteration'], ' ... ', item['scoreValid'], ' ... ', item['scoreTest'])
-            # Copy the models to the stack folder
-            for idx in range(self.__cvSplits__):
-                v_fileName = f'model_{self.__modelName__}_{item["iteration"]}_{idx + 1}'
-                v_fileName = os.path.join(v_src_files, v_fileName)
-                shutil.copy(v_fileName, v_stackDir)
-        
-        return v_bayes_trials
+        self.__bayes_trials__ = sorted(v_bayes_trials.results, key=lambda x: x['scoreValid'], reverse = True)
+
+        return self.__bayes_trials__

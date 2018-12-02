@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import progressbar
 
+from IPython.display import Markdown, display
+
 #------------------------------------------------------------------------------------------------------------------------------------
 def printmd(p_string):
     display(Markdown(p_string))

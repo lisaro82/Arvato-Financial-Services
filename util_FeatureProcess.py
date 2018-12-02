@@ -415,6 +415,83 @@ def utl_processColumns(p_data, p_column):
 
 
 #------------------------------------------------------------------------------------------------------------------------------------
+def utl_SplitDate(p_data, p_column, p_newColName = None):    
+    v_new = p_column if p_newColName is None else p_newColName    
+    p_data[f'{v_new}_Year']           = p_data[p_column].dt.year # The year of the datetime
+    p_data[f'{v_new}_Month']          = p_data[p_column].dt.month # The month as January=1, December=12
+    p_data[f'{v_new}_Day']            = p_data[p_column].dt.day # The day of the datetime
+    p_data[f'{v_new}_Hour']           = p_data[p_column].dt.hour # The hour of the datetime
+    p_data[f'{v_new}_Minute']         = p_data[p_column].dt.minute # The minute of the datetime
+    p_data[f'{v_new}_Second']         = p_data[p_column].dt.second # The second of the datetime
+    p_data[f'{v_new}_DayOfYear']      = p_data[p_column].dt.dayofyear # The ordinal day of the year
+    p_data[f'{v_new}_WeekOfYear']     = p_data[p_column].dt.weekofyear # The week ordinal of the year
+    p_data[f'{v_new}_DayOfWeek']      = p_data[p_column].dt.dayofweek # The day of the week with Monday=0, Sunday=6
+    p_data[f'{v_new}_Quarter']        = p_data[p_column].dt.quarter # The quarter of the date
+    p_data[f'{v_new}_DaysInMonth']    = p_data[p_column].dt.days_in_month # The number of days in the month
+    p_data[f'{v_new}_IsMonthStart']   = p_data[p_column].dt.is_month_start.apply(lambda x: 1 if x else 0)   # Flag for first day of month
+    p_data[f'{v_new}_IsMonthEnd']     = p_data[p_column].dt.is_month_end.apply(lambda x: 1 if x else 0)     # Flag for last day of the month
+    p_data[f'{v_new}_IsQuarterStart'] = p_data[p_column].dt.is_quarter_start.apply(lambda x: 1 if x else 0) # Flag for first day of a quarter
+    p_data[f'{v_new}_IsQuarterEnd']   = p_data[p_column].dt.is_quarter_end.apply(lambda x: 1 if x else 0)   # Flag for last day of a quarter
+    p_data[f'{v_new}_IsYearStart']    = p_data[p_column].dt.is_year_start.apply(lambda x: 1 if x else 0)    # Flag for first day of a year
+    p_data[f'{v_new}_IsYearEnd']      = p_data[p_column].dt.is_year_end.apply(lambda x: 1 if x else 0)      # Flag for last day of a year    
+    p_data[f'{v_new}_Season']         = p_data[f'{v_new}_Month'].apply(lambda x:      0 if x in [1, 2, 12] # 'winter'
+                                                                                 else 1 if x in [3, 4, 5]  # 'spring'
+                                                                                 else 2 if x in [6, 7, 8]  # 'summer'
+                                                                                 else 3 )                  # 'fall'    
+    return
+
+
+#------------------------------------------------------------------------------------------------------------------------------------
+def utl_getValuesCount(p_azdias, p_customers, p_featuresDef):   
+    printHeader(f'Extract all values from dataframes: {formatLabel("Azdias")} and {formatLabel("Customers")}.')
+    
+    def getValues(p_column, p_data):
+        v_values = pd.DataFrame(p_data[p_column].value_counts(dropna = False)).reset_index()
+        v_values.columns = ['Value', 'Value No']
+        v_values['Column Name'] = p_column
+        v_values['Value %'] = np.round(v_values['Value No'] / p_data.shape[0] * 100, 2)
+        return v_values[['Column Name', 'Value', 'Value No', 'Value %']]
+    
+    v_values = pd.DataFrame()
+    with progressbar.ProgressBar(max_value = len(p_azdias.drop('LNR', axis = 1).columns)) as bar:
+        v_count = 0
+        for column in p_azdias.drop('LNR', axis = 1).columns:
+            v_values = pd.concat([ v_values, 
+                                   ( getValues(column, p_azdias)
+                                        .merge( getValues(column, p_customers), 
+                                                how = 'outer', on = ['Column Name', 'Value'], 
+                                                suffixes = ('_Azdias', '_Cust') ) ) ] )
+            v_count += 1
+            bar.update(v_count)    
+    v_values.reset_index(drop = True, inplace = True)
+    
+    v_values = v_values.merge( utl_transformDefinition(p_featuresDef), how = 'left', on = ['Column Name'] )
+    v_lambda = lambda x: 1 if x['Value'] == x['Value Unknown'] else 0
+    v_values['_isUnknown'] = v_values[['Value Unknown', 'Value']].apply(v_lambda, axis = 1)
+    v_values['Description'] = v_values['Description'].fillna('Not Available')
+    v_values = v_values.sort_values(['Column Name', 'Value']).reset_index(drop = True)
+    display(v_values.head(10))
+    return v_values
+
+
+#------------------------------------------------------------------------------------------------------------------------------------
+def utl_transformDefinition(p_featuresDef):
+    v_keys = [ { f'{key}{item}': [ p_featuresDef[key]['Description'],
+                                   p_featuresDef[key]['Value Unknown'] ] 
+                      for item in p_featuresDef[key]['Split'][list(p_featuresDef[key]['Split'].keys())[0]]['01_Columns'].keys() }
+                  for key in p_featuresDef.keys() if 'Split' in p_featuresDef[key].keys() ]
+    v_featuresDef = pd.concat([ pd.DataFrame( { key: [ value['Description'],
+                                                       value['Value Unknown'] ] 
+                                                for key, value in p_featuresDef.items() }, index = [1, 2] ).T,
+                                pd.DataFrame( { key: value 
+                                                for item in v_keys for key, value in item.items() }, index = [1, 2] ).T ], 
+                                axis = 0 ).reset_index()   
+    v_featuresDef.columns = ['Column Name', 'Description', 'Value Unknown']
+    v_featuresDef['Value Unknown'] = v_featuresDef['Value Unknown'].fillna(-2).astype(np.float16)
+    return v_featuresDef
+
+
+#------------------------------------------------------------------------------------------------------------------------------------
 def utl_cleanDataFrame( p_label, p_data, p_featuresDef, p_categoricalColumns, p_categoricalToProcess, 
                         p_dummyEncode, p_highlyCorrelated, p_pcaMissingUnknown, p_colMissing, p_colUnknownVals,
                         p_ignoreScale = [] ):
