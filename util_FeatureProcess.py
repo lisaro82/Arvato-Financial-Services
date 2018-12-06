@@ -3,6 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import progressbar
+import joblib
+import json
 
 from util_Generic import printmd, printHeader, formatLabel
 from util_Generic import utl_toInteger, utl_isInteger
@@ -609,7 +611,9 @@ def utl_cleanDataFrame( p_label, p_data, p_saveFilenames,
     #------------------------------------------------------------------------------------------------------------------------
     # Re-encode outliers
     printmd(f'Re-encode outliers.')
-    for column, mapValue in p_outlierMap['categorical'].items():
+    for column, mapValue in { "ALTERSKATEGORIE_GROB": {9: 5}, 
+                              "ARBEIT":               {9: 5}, 
+                              "KOMBIALTER":           {9: 5} }.items():
         v_data[column] = v_data[column].replace(mapValue)
     for column in [ 'ALTER_KIND3', 'ALTER_KIND4' ]:
         v_data[column] = v_data[column].fillna(-999).apply(lambda x: 0 if x == -999 else 1)        
