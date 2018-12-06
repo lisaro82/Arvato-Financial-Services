@@ -282,56 +282,32 @@ We check for the highly correlated features as most algorithms are sensitive to 
 [highlyCorrelated]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/highlyCorrelated.png "highlyCorrelated"
 ![alt text][highlyCorrelated]
 
-
 We decide to drop the following columns: 
-   - DSL_FLAG
-   - ALTER_HH_Value_1
-   - EINGEFUEGT_AM_Year
-   - EINGEFUEGT_AM_Month
-   - EINGEFUEGT_AM_Quarter
-   - EINGEFUEGT_AM_Hour
-   - EINGEFUEGT_AM_Minute
-   - EINGEFUEGT_AM_Second
-   - EINGEFUEGT_AM_WeekOfYear
-   - LP_LEBENSPHASE_GROB_Value_FAMILY
-   - LP_LEBENSPHASE_FEIN_Value_FAMILY
-   - ANZ_TITEL
-   - ANZ_STATISTISCHE_HAUSHALTE
-   - PLZ8_HHZ
-   - PLZ8_GBZ
-   - KBA13_SEG_GROSSRAUMVANS
-   - KBA13_KMH_211
-   - KBA13_ALTERHALTER_61
-   - KBA13_ALTERHALTER_60
-   - KBA13_ALTERHALTER_45
-   - KBA13_ALTERHALTER_30
-   - KBA05_KRSKLEIN
-   - KBA05_HERST3
-   - KBA05_HERST2
+   - ANZ_STATISTISCHE_HAUSHALTE 
+   - EINGEFUEGT_AM_DayOfYear 
+   - EINGEFUEGT_AM_Minute 
+   - EINGEFUEGT_AM_Second 
+   - EINGEFUEGT_AM_Hour 
+   - EINGEFUEGT_AM_Quarter 
+   - EINGEFUEGT_AM_WeekOfYear 
+   - GEBURTSJAHR 
+   - KBA13_HERST_SONST 
+   - KBA13_KMH_250 
+   - ORTSGR_KLS9 
+   - PLZ8_BAUMAX 
+   - PLZ8_GBZ 
+   - PLZ8_HHZ 
+   - CAMEO_DEUINTL_2015_Value_1 
+   - LP_LEBENSPHASE_FEIN_Value_FAMILY 
+   - LP_LEBENSPHASE_FEIN_Value_INCOME 
+   - LP_LEBENSPHASE_GROB_Value_FAMILY 
+   - LP_FAMILIE_GROB 
+   - PRAEGENDE_JUGENDJAHRE_Value_2 
+   - _MIN_GEBAEUDEJAHR_MAX_1993 
+   - D19_VERSAND_ONLINE_DATUM_Value_INCREASE
 
 
----------
-    
-
-
-### 2.2. Data Visualization
-
-
-
-
-
-
----------
-Build data visualizations to further convey the information associated with your data exploration journey. Ensure that visualizations are appropriate for the data values you are plotting.
-
-In this section, you will need to provide some form of visualization that summarizes or extracts a relevant characteristic or feature about the data. The visualization should adequately support the data being used. Discuss why this visualization was chosen and how it is relevant. Questions to ask yourself when writing this section:
-
-    Have you visualized a relevant characteristic or feature about the dataset or input data?
-    Is the visualization thoroughly analyzed and discussed?
-    If a plot is provided, are the axes, title, and datum clearly defined?
-
-
-### 2.3. Algorithms and Techniques
+### 2.2. Algorithms and Techniques
 
 #### Unsupervised modeling
 
@@ -348,27 +324,25 @@ The main avantage for using this type of clustering on our dataset is that it wi
 
 In order to predict the probability of a person to reply to the mailing campaign we will create a stack of LightGBM models which will predict together this probability.
 
-Every model will in fact be a stack of models trained through cross-validation. 
+Every model will in fact be a stack of models trained through cross-validation and the AUC score will be the mean AUC score obtained by the individual models. 
 
-We will start by searching the best hyperparamaters for models using all available features by using a Bayesian search. Once we have a list of optimized hyperparamaters, we will choose the first 10 and calculate the most important features. All these models will be trained on the exact same stratified splits.
+We will start by searching the best hyperparamaters for models using all available features by using a Bayesian search. 
+
+Once we have a list of optimized hyperparamaters, we will choose the first 10 and calculate the most important features. All these models will be trained on the exact same stratified splits.
 
 We than choose the first 30 features and do a new search for the optimal parameters.
 
 The final stacking will be done on a combination of models trained with all the features and with only the first 30 more important features.
 
 
+### 2.3. Benchmark
 
----------
-In this section, you will need to discuss the algorithms and techniques you intend to use for solving the problem. You should justify the use of each one based on the characteristics of the problem and the problem domain. Questions to ask yourself when writing this section:
-
-    Are the algorithms you will use, including any default variables/parameters in the project clearly defined?
-    Are the techniques to be used thoroughly discussed and justified?
-    Is it made clear how the input data or datasets will be handled by the algorithms and techniques chosen?
-    
-
-### 2.4. Benchmark
-
-
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ---------
 In this section, you will need to provide a clearly defined benchmark result or threshold for comparing across performances obtained by your solution. The reasoning behind the benchmark (in the case where it is not an established result) should be discussed. Questions to ask yourself when writing this section:
 
@@ -420,9 +394,9 @@ In this section, you will need to discuss the process of improvement you made up
 ## 4.1. Model Evaluation and Validation
 
 ---------
-The final modelâ€™s qualities â€” such as parameters â€” are evaluated in detail. Some type of analysis is used to validate the robustness of the modelâ€™s solution.
+The final modelâ??s qualities â?? such as parameters â?? are evaluated in detail. Some type of analysis is used to validate the robustness of the modelâ??s solution.
 
-In this section, the final model and any supporting qualities should be evaluated in detail. It should be clear how the final model was derived and why this model was chosen. In addition, some type of analysis should be used to validate the robustness of this model and its solution, such as manipulating the input data or environment to see how the modelâ€™s solution is affected (this is called sensitivity analysis). Questions to ask yourself when writing this section:
+In this section, the final model and any supporting qualities should be evaluated in detail. It should be clear how the final model was derived and why this model was chosen. In addition, some type of analysis should be used to validate the robustness of this model and its solution, such as manipulating the input data or environment to see how the modelâ??s solution is affected (this is called sensitivity analysis). Questions to ask yourself when writing this section:
 
     Is the final model reasonable and aligning with solution expectations? Are the final parameters of the model appropriate?
     Has the final model been tested with various inputs to evaluate whether the model generalizes well to unseen data?
@@ -435,7 +409,7 @@ In this section, the final model and any supporting qualities should be evaluate
 The final results are discussed in detail.
 Exploration as to why some techniques worked better than others, or how improvements were made are documented.
 
-In this section, your modelâ€™s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
+In this section, your modelâ??s final solution and its results should be compared to the benchmark you established earlier in the project using some type of statistical analysis. You should also justify whether these results and the solution are significant enough to have solved the problem posed in the project. Questions to ask yourself when writing this section:
 
     Are the final results found stronger than the benchmark result reported earlier?
     Have you thoroughly analyzed and discussed the final solution?
@@ -481,7 +455,7 @@ In this section, you will need to provide discussion as to how one aspect of the
 ------------------------------------------------------------------------
 Before submitting, ask yourself. . .
 
-    Does the project report youâ€™ve written follow a well-organized structure similar to that of the project template?
+    Does the project report youâ??ve written follow a well-organized structure similar to that of the project template?
     Is each section (particularly Analysis and Methodology) written in a clear, concise and specific fashion? Are there any ambiguous terms or phrases that need clarification?
     Would the intended audience of your project be able to understand your analysis, methods, and results?
     Have you properly proof-read your project report to assure there are minimal grammatical and spelling mistakes?
