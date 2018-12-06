@@ -350,11 +350,36 @@ In this section, you will need to provide a clearly defined benchmark result or 
     Is it clear how this result or value was obtained (whether by data or by hypothesis)?
 
 
-
 ## 3. Methodology
 
-(approx. 3-5 pages)
 ## 3.1. Data Preprocessing
+
+Using the analysis and data exploration above, we execute the following preprocessing steps, by using the cleaning function (the same cleaning process will also be aplied on the training and testing dataset):
+
+[preprocessing_01]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/preprocessing_01.png "preprocessing_01"
+![alt text][preprocessing_01]
+
+[preprocessing_02]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/preprocessing_02.png "preprocessing_02"
+![alt text][preprocessing_02]
+
+For the unsupervised model we also execute the following suplementary steps:
+   - we create custom scalers based on the general population values to be used for all datasets for which we will use the unsupervised model for predicting the clusters 
+   - we apply the scalers on the general population and the customers, by creating custom scalers based on the
+   - we impute missing values for non-categorical features by using the mean value
+   - we calculate the best number of reduced dimensions through PCA
+
+[preprocessing_03]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/preprocessing_03.png "preprocessing_03"
+![alt text][preprocessing_03]
+
+[preprocessing_04]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/preprocessing_04.png "preprocessing_04"
+![alt text][preprocessing_04]
+   
+   - we keep 150 dimensions for the PCA to be applied on the datasets for which we will use the unsupervised model for predicting the clusters  
+
+[preprocessing_05]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/preprocessing_05.png "preprocessing_05"
+![alt text][preprocessing_05]
+
+Before calculating the 
 
 ---------
 All preprocessing steps have been clearly documented. Abnormalities or characteristics about the data or input that needed to be addressed have been corrected. If no data preprocessing is necessary, it has been clearly justified.
