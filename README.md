@@ -15,69 +15,311 @@ The data and outline of this project was provided by Arvato Financial Solutions,
 
 ### 1.2. Problem Statement
 
-With traditional advertising methods, a company may be spending 1000 Euros for a billboard to advertise to 700 people in a day, with no control over demographic or being able to objectivly measure the impact of this investment. Usually the costs linked to marketing campaigns, represent an important part of the yearly budget. One way to optimize this budget is to address online direct marketing to a specific audience, which allows a company to set realistic goals and improve the sales whith a smaller budget. 
+With traditional advertising methods, a company may be spending 1000 Euros for a billboard to advertise to 700 people in a day, with no control over demographic or being able to objectivly measure the impact of this investment. Usually the costs linked to marketing campaigns, represent an important part of the yearly budget. One way to optimize this budget is to address online direct marketing to a specific audience, which allows a company to set realistic goals and improve the sales with a smaller budget. 
 
-Even if a direct markeing campaign represents a smaller investment done by a company, when using a large database for a direct marketing campaign, a key objective is to identify and remove prospects not likely to respond, or that represent a high risk to the organisation. This optimisation of the direct marketing campaign tends to minimise the time and resources spent on leads that won't result in ROI. By removing those not interested, the company will improve its response rates: making the campaign more profitable by being properly directed.
+Even if a direct marketing campaign represents a smaller investment done by a company, when using a large database for a direct marketing campaign, a key objective is to identify and remove prospects not likely to respond, or that represent a high risk to the organisation. This optimisation of the direct marketing campaign tends to minimise the time and resources spent on leads that won't result in ROI. By removing those not interested, the company will improve its response rates: making the campaign more profitable by being properly directed.
 
-In order to achieve results with only a small percentage of the cost of traditional advertising, a direct marketing campaign should be optimezed and properly directed. 
- 
+In order to achieve results with only a small percentage of the cost of traditional advertising, a direct marketing campaign should be optimezed and properly directed.
 
+In order to optimize a direct marketing campaign, we will identify the segments that exist in the general population by using the GMM (Gaussian Mixture Model) technique in order to create the segmentation of the population. 
 
+Once we have identified the segments in the general population, we will predict in which of these segments our existing customers are located. We will than calculate the percentages in the general population and in the customers dataset that the given segment covers. All the segments for which the **percentage of customers is bigger than the percentage in the general population**, are our **target segments** as the people in these segments are more likely to convert and become a customer. We should than reach to this particular audience with personalized messages.
 
+Once we have reached to the selected audience we will than check the features of the people that have responded to the campain and do a further filtering by using supervised learning and applying multiple stacked models in order to **predict the probability** of a given person to reply to the campaign.
 
-    Take the segmentation and targeting. One of the great advantages of this type of marketing is that you can reach your specific audience segments with personalized messages. If you want to succeed, you should invest time in research to identify consumers most likely to convert and thus direct your efforts to actions that really work.
+We will also use the SHAP values in order to understand and explain our models prediction. We will use the SHAP values at global level for the complete dataset in order to identify the importance of every feature, but also at local level for a couple of records in order to better understand the people which have already replied or not to the campain.
 
-
-    Optimize your marketing budget. 
-
-
-
-With direct marketing, companies are likely to have a benchmark success rate from previous similar campaigns that they can base their goals on. Companies can try to optimise it through various strategies, whether by trying to offer the best deals or by using behavioural tactics.
-
-One of the most successful ways to **optimise direct marketing** results is through machine learning.
-
-
-
----------
-The problem which needs to be solved is clearly defined. A strategy for solving the problem, including discussion of the expected solution, has been made.
-
-In this section, you will want to clearly define the problem that you are trying to solve, including the strategy (outline of tasks) you will use to achieve the desired solution. You should also thoroughly discuss what the intended solution will be for this problem. Questions to ask yourself when writing this section:
-
-    Is the problem statement clearly defined? Will the reader understand what you are expecting to solve?
-    Have you thoroughly discussed how you will attempt to solve the problem?
-    Is an anticipated solution clearly defined? Will the reader understand what results you are looking for?
 
 ### 1.3. Metrics
 
-An essential aspect of direct marketing is that the consumer response is measurable.
+We will be using two different metrics depending on the problem we will be trying to solve.
 
----------
-Metrics used to measure performance of a model or result are clearly defined. Metrics are justified based on the characteristics of the problem.
+#### Unsupervised model
 
-Metrics
+The unsupervised model has to create the segmentation of our population.
 
-In this section, you will need to clearly define the metrics or calculations you will use to measure performance of a model or result in your project. These calculations and metrics should be justified based on the characteristics of the problem and problem domain. Questions to ask yourself when writing this section:
+We will be using AIC (Akaike information criterion) and BIC (Bayesian information criterion) in order to determine the optimal number of segments that we should keep in the model. 
 
-    Are the metrics youâ€™ve chosen to measure the performance of your models clearly discussed and defined?
-    Have you provided reasonable justification for the metrics chosen based on the problem and solution?
+We will also check that the algorithm has correctly converted. 
+
+The Akaike information criterion (AIC) is an estimator of the relative quality of statistical models for a given dataset. Given a collection of models for the data, AIC estimates the quality of each model, relative to each of the other models. Thus, AIC provides a means for model selection. 
+
+The Bayesian information criterion (BIC) is based, in part, on the likelihood function and it is closely related to the AIC. 
+
+The model with the lowest BIC and AIC is preferred.
+
+
+#### Supervised model 
+
+The supervised model has to predict if a person will reply or not to a given campain, so we have a binary classification problem. 
+
+When we check the distribution the the two classes in the target we can see that only 1% of the total number of persons to which we have reached out have responded, so we have a very imbalanced target. 
+
+One metric which is insensitive to imbalanced classes is ROC - AUC (Receiver Operating Characteristic - Area Under the Curve). 
+
+Also, we have choosen to use ROC - AUC metric as the stacked models will not predict if a given person will definetively reply or not to the campain, but rather they will predict the probability that a given person will reply to the campaign.  
 
 
 ## 2. Analysis
 
 ### 2.1. Data Exploration
 
+We have multiple files in CSV / XLS format associated with this project:
+   - top-level list of attributes and descriptions, organized by informational category
+   - detailed mapping of data values for each feature in alphabetical order
+   - general population dataset - Demographics data for the general population of Germany
+   - customer dataset - Demographics data for customers of a mail-order company
+   - training dataset for the supervised model - Demographics data for individuals who were targets of a marketing campaign
+   - testing dataset to generate predictions by using the supervised model - Demographics data for individuals who were targets of a marketing campaign
+
+Each row of the demographics files represents a single person, but also includes information outside of individuals, including information about their household, building, and neighborhood.
+
+We start our data exploration by checking the number of rows and features that can be found in the general population dataset and in the customers dataset.
+
+[numberOfRows]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/numberOfRows.png "Number of rows in the general population and the customers dataset"
+![alt text][numberOfRows]
+
+#### Analysis of categorical features
+
+The analysis of categorical features consists in identifying the features that act as categories and should be considered as such.
+
+In order to identify the features that are categorical, we use different methods:
+   - we process the detailed mapping file provided in order to identify usefull insights
+   - we re-encode certain features to act as categorical features based on a custom mapping
+   - we define a particular range of values for which all features having the values inside the given range are to be considered as categorical
+
+By using the detailed mapping file provided, we can identify the following:
+   - we have multiple features that use two or more encodings for the same meaning. We will check the definition dictionary and convert all multiple encodings in order to only keep the first one.
+   - we have multiple multi-level features, that we can split in single-level features
+
+The following features are multi-level features:
+
+   - CAMEO_DEUINTL_2015 - CAMEO classification 2015 - international typology. We create two new variables containing the family grouping and the wealth indicator.
+
+[multiLevelFeatures_CAMEO_DEU]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/multiLevelFeatures_CAMEO_DEU.png "Multi-level features"
+![alt text][multiLevelFeatures_CAMEO_DEU]
+
+   - PRAEGENDE_JUGENDJAHRE - dominating movement in the person's youth (avantgarde or mainstream). We create four new variables containing the decade, the type of movement, the indication if the movement was Avantgarde / Mainstream, the location O / W / O+W.
+
+[multiLevelFeatures_PRAEGENDE_JUGENDJAHRE]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/multiLevelFeatures_PRAEGENDE_JUGENDJAHRE.png "Multi-level features"
+![alt text][multiLevelFeatures_PRAEGENDE_JUGENDJAHRE]
+
+   - D19_BANKEN_DATUM - actuality of the last transaction for the segment banks TOTAL. We create two new variables containing the ACTIVITY_WITHIN_MONTHS and the Value_INCREASE.
+
+[multiLevelFeatures_BANKEN_DATUM]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/multiLevelFeatures_BANKEN_DATUM.png "Multi-level features"
+![alt text][multiLevelFeatures_BANKEN_DATUM]
+
+   - D19_BANKEN_ONLINE_DATUM - actuality of the last transaction for the segment banks ONLINE. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_BANKEN_OFFLINE_DATUM - actuality of the last transaction for the segment banks OFFLINE. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_GESAMT_DATUM - actuality of the last transaction with the complete file TOTAL. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_GESAMT_ONLINE_DATUM - actuality of the last transaction with the complete file ONLINE. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_GESAMT_OFFLINE_DATUM - actuality of the last transaction with the complete file OFFLINE. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_TELKO_DATUM - actuality of the last transaction for the segment telecommunication TOTAL. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_TELKO_ONLINE_DATUM - actuality of the last transaction for the segment telecommunication ONLINE. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_TELKO_OFFLINE_DATUM - actuality of the last transaction for the segment telecommunication OFFLINE. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_VERSAND_DATUM - actuality of the last transaction for the segment mail-order TOTAL. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_VERSAND_ONLINE_DATUM - actuality of the last transaction for the segment mail-order ONLINE. Same mapping as D19_BANKEN_DATUM feature.
+
+   - D19_VERSAND_OFFLINE_DATUM - actuality of the last transaction for the segment mail-order OFFLINE. Same mapping as D19_BANKEN_DATUM feature.
+
+   - LP_LEBENSPHASE_GROB - lifestage rough. We create three new variables containing the AGE, the FAMILY and the INCOME.
+
+[multiLevelFeatures_LP_LEBENSPHASE_GROB]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/multiLevelFeatures_LP_LEBENSPHASE_GROB.png "Multi-level features"
+![alt text][multiLevelFeatures_LP_LEBENSPHASE_GROB]
+
+   - LP_LEBENSPHASE_FEIN - lifestage fine. We create four new variables containing the AGE, the FAMILY, the INCOME and OTHER.
+
+[multiLevelFeatures_LP_LEBENSPHASE_FEIN]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/multiLevelFeatures_LP_LEBENSPHASE_FEIN.png "Multi-level features"
+![alt text][multiLevelFeatures_LP_LEBENSPHASE_FEIN]
+
+   - LP_STATUS_FEIN - social status fine. We create two new variables for INCOME and OTHER.
+
+[multiLevelFeatures_LP_STATUS_FEIN]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/multiLevelFeatures_LP_STATUS_FEIN.png "Multi-level features"
+![alt text][multiLevelFeatures_LP_STATUS_FEIN]
+
+   - LP_FAMILIE_FEIN - family type fine. We create three new variables containing the CHILD, the FAMILY and the GENERATIONAL split.
+
+[multiLevelFeatures_LP_FAMILIE_FEIN]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/multiLevelFeatures_LP_FAMILIE_FEIN.png "Multi-level features"
+![alt text][multiLevelFeatures_LP_FAMILIE_FEIN]
+
+For certain categorical columns we have created a custom mapping that we apply in order to transform object values to numerical values. Below you can find an example for such a mapping:
+
+[featureMapping_01]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/featureMapping_01.jpg "Features Mapping 01"
+![alt text][featureMapping_01]
+
+[featureMapping_02]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/featureMapping_02.jpg "Features Mapping 02"
+![alt text][featureMapping_02]
+
+Column 'EINGEFUEGT_AM' contains an encoding of type timestamp, so we will convert it to a timestamp and extract its components.
+
+[EINGEFUEGT_AM]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/EINGEFUEGT_AM.png "EINGEFUEGT_AM"
+![alt text][EINGEFUEGT_AM]
+
+We consider that all the features that have all values between -2 and 10 are categorical features, so we will mark them as such. 
+
+
+#### Analysis of Outliers
+
+
+An outlier is an observation point that is distant from other observations.
+
+We will be using the IQR (interquartile range) method in order to identify the outliers. We will apply a threshold of two times the IQR in order to define the minimum and maximum limits for acceptable values.
+
+[outliers_01]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_01.png "outliers_01"
+![alt text][outliers_01]
+
+We will remap the following categorical features:
+   - ALTERSKATEGORIE_GROB - age through first name analysis
+
+[outliers_02]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_02.png "outliers_02"
+![alt text][outliers_02]
+
+   - ARBEIT - share of unemployed person in the community
+
+[outliers_03]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_03.png "outliers_03"
+![alt text][outliers_03]
+
+   - KOMBIALTER - unknown description
+
+[outliers_04]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_04.png "outliers_04"
+![alt text][outliers_04]
+
+
+For column ALTER_KIND3 and ALTER_KIND4 we will just keep the information linked to the fact that the column is filled-in or not. 
+
+For the columns which were identified as having outliers, and are not identified as being categorical, we do the following operations:
+   - if the outliers are smaller than Q1, we create a new column that flags the value as being smaller than the minimum threshold and we set the column value as being the threshold
+   - if the outliers are bigger than Q3, we create a new column that flags the value as being bigger than the maximum threshold and we set the column value as being the threshold
+
+The non-categorical features which are re-mapped based on the above rule are the following:
+
+[outliers_05]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_05.png "outliers_05"
+![alt text][outliers_05]
+
+[outliers_06]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_06.png "outliers_06"
+![alt text][outliers_06]
+
+[outliers_07]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_07.png "outliers_07"
+![alt text][outliers_07]
+
+[outliers_08]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_08.png "outliers_08"
+![alt text][outliers_08]
+
+[outliers_09]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_09.png "outliers_09"
+![alt text][outliers_09]
+
+[outliers_10]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_10.png "outliers_10"
+![alt text][outliers_10]
+
+[outliers_11]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_11.png "outliers_11"
+![alt text][outliers_11]
+
+
+#### Analysis of MISSING / UNKNOWN values
+
+The analysis of MISSING / UNKNOWN values consists in exploring the correlation between MISSING / UNKNOWN values and particular values for other features.
+
+We start by calculating all the possible values and their distribution in both dataframes.
+
+Missing values could follow a specific pattern, so we take into account that we can have the following situations:
+   - data is **Missing Completely at Random (MCAR)** - no relationship between the missingness of the data and any values, observed or missing (nothing systematic going on)
+   - data is **Missing at Random (MAR)** - we have a systematic relationship between the propensity of missing values and the observed data, but not the missing data. Whether an observation is missing has nothing to do with the missing values, but it does have to do with the values of an individual’s observed variables (eg: women are less-likely to tell their age or weight)
+   - data is **Missing Not at Random (MNAR)** - there is a relationship between the propensity of a value to be missing and its values. This is a case where the people with the lowest education are missing on education.
+
+We check the pattern for MISSING values. Below you can see the first records which have the highest frequency:
+
+[MISSING]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/MissingUnknown_MISSING.jpg "MISSING"
+![alt text][MISSING]
+
+We can see that as there are multiple cases where we can see a clear correlation between the number of missing values for the different features, so we can consider that the values are Missing Not at Random (MNAR).
+
+We check the pattern for UNKNOWN values. Below you can see the first records which have the highest frequency:
+
+[UNKNOWN]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/MissingUnknown_UNKNOWN.jpg "UNKNOWN"
+![alt text][UNKNOWN]
+
+We can see that as there are multiple cases where we can see a clear correlation between the number of unknown values for the different features, so we can consider that the values are Missing Not at Random (MNAR).
+
+As we know that we are in a MNAR situation, we will execute a Principal component analysis (PCA) on both MISSING and UNKNOWN data in order to identify the missing / unknown flags with a reduced dimensionality.
+
+[MissingUnknown_PCA_60_01]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/MissingUnknown_PCA_60_01.png "MissingUnknown_PCA_60_01"
+![alt text][MissingUnknown_PCA_60_01]
+
+[MissingUnknown_PCA_60_02]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/MissingUnknown_PCA_60_02.png "MissingUnknown_PCA_60_02"
+![alt text][MissingUnknown_PCA_60_02]
+
+Based of the visualisation above, we will select **18 dimensions** for the PCA, as they capture almost 100% of the total variance for unknown and missing values. We do a retrain for the PCA with the selected number of components, and save the trained PCA.
+
+[MissingUnknown_PCA_18]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/MissingUnknown_PCA_18.png "MissingUnknown_PCA_18"
+![alt text][MissingUnknown_PCA_18]
+
+
+#### Fill-in missing values
+
+We decide to fill-in missing values in two cases:
+   - dummy encode the object columns for which a custom mapping is not defined
+   - fill in categorical features with -2
+
+The features that still contain null values are the following:
+
+[nullValues]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/nullValues.jpg "nullValues"
+![alt text][nullValues]
+
+
+#### Check for highly correlated features
+
+We check for the highly correlated features as most algorithms are sensitive to them, and also they don't bring any extra information.
+
+[highlyCorrelated]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/highlyCorrelated.png "highlyCorrelated"
+![alt text][highlyCorrelated]
+
+
+We decide to drop the following columns: 
+   - DSL_FLAG
+   - ALTER_HH_Value_1
+   - EINGEFUEGT_AM_Year
+   - EINGEFUEGT_AM_Month
+   - EINGEFUEGT_AM_Quarter
+   - EINGEFUEGT_AM_Hour
+   - EINGEFUEGT_AM_Minute
+   - EINGEFUEGT_AM_Second
+   - EINGEFUEGT_AM_WeekOfYear
+   - LP_LEBENSPHASE_GROB_Value_FAMILY
+   - LP_LEBENSPHASE_FEIN_Value_FAMILY
+   - ANZ_TITEL
+   - ANZ_STATISTISCHE_HAUSHALTE
+   - PLZ8_HHZ
+   - PLZ8_GBZ
+   - KBA13_SEG_GROSSRAUMVANS
+   - KBA13_KMH_211
+   - KBA13_ALTERHALTER_61
+   - KBA13_ALTERHALTER_60
+   - KBA13_ALTERHALTER_45
+   - KBA13_ALTERHALTER_30
+   - KBA05_KRSKLEIN
+   - KBA05_HERST3
+   - KBA05_HERST2
+
+
 ---------
-Features and calculated statistics relevant to the problem have been reported and discussed related to the dataset, and a thorough description of the input space or input data has been made. Abnormalities or characteristics about the data or input that need to be addressed have been identified.
-
-In this section, you will be expected to analyze the data you are using for the problem. This data can either be in the form of a dataset (or datasets), input data (or input files), or even an environment. The type of data should be thoroughly described and, if possible, have basic statistics and information presented (such as discussion of input features or defining characteristics about the input or environment). Any abnormalities or interesting qualities about the data that may need to be addressed have been identified (such as features that need to be transformed or the possibility of outliers). Questions to ask yourself when writing this section:
-
-    If a dataset is present for this problem, have you thoroughly discussed certain features about the dataset? Has a data sample been provided to the reader?
-    If a dataset is present for this problem, are statistics about the dataset calculated and reported? Have any relevant results from this calculation been discussed?
-    If a dataset is not present for this problem, has discussion been made about the input space or input data for your problem?
-    Are there any abnormalities or characteristics about the input space or dataset that need to be addressed? (categorical variables, missing values, outliers, etc.)
+    
 
 
 ### 2.2. Data Visualization
+
+
+
+
+
 
 ---------
 Build data visualizations to further convey the information associated with your data exploration journey. Ensure that visualizations are appropriate for the data values you are plotting.
@@ -90,6 +332,30 @@ In this section, you will need to provide some form of visualization that summar
 
 
 ### 2.3. Algorithms and Techniques
+
+#### Unsupervised modeling
+
+Clustering is a method of unsupervised learning, where each datapoint or cluster is grouped to into a subset or a cluster, which contains similar kind of data points.
+
+We will first use the PCA in order to reduce the dimensionamity of our dataset and than we will create a GMM (Gaussian Mixture Model) model. 
+
+A Gaussian mixture model is a probabilistic model that assumes all the data points are generated from a mixture of a finite number of Gaussian distributions with unknown parameters. The GMM is different from K-Means as it will not try to Hard assign data points to a cluster, but rather will use the probability of a sample to determine the feasibility of it belonging to a cluster.
+
+The main avantage for using this type of clustering on our dataset is that it will not bias the cluster sizes to have specific structures as does K-Means (Circular).
+
+
+#### Supervised modeling
+
+In order to predict the probability of a person to reply to the mailing campaign we will create a stack of LightGBM models which will predict together this probability.
+
+Every model will in fact be a stack of models trained through cross-validation. 
+
+We will start by searching the best hyperparamaters for models using all available features by using a Bayesian search. Once we have a list of optimized hyperparamaters, we will choose the first 10 and calculate the most important features. All these models will be trained on the exact same stratified splits.
+
+We than choose the first 30 features and do a new search for the optimal parameters.
+
+The final stacking will be done on a combination of models trained with all the features and with only the first 30 more important features.
+
 
 
 ---------

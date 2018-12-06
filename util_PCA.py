@@ -3,7 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import progressbar
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA    
+
+from sklearn.preprocessing import Imputer        as Imputer
+from sklearn.preprocessing import StandardScaler as Scaler
+
 
 #------------------------------------------------------------------------------------------------------------------------------------
 def utl_pcaResults(p_pca, p_columns, p_ShowTop = 10):
@@ -105,3 +109,33 @@ def utl_applyPCA(p_data, p_n_components = None, p_ShowWeights = False, p_ShowTop
         ax2.set_yticks([])
         plt.show()
     return v_pca
+    
+    
+#------------------------------------------------------------------------------------------------------------------------------------
+def utl_scaleImpute(X_data, p_imputeColumns, p_scaleColumns, p_scalers = None):
+    X_data = X_data.copy()
+    v_imputeColumns = [column for column in p_imputeColumns if column in X_data.columns]
+    v_scaleColumns  = [column for column in p_scaleColumns  if column in X_data.columns]
+    
+    for column in v_imputeColumns:
+        v_values = X_data[column].astype(float).values.reshape(-1, 1)
+        if np.isnan(v_values).all():
+            X_data[column] = -999
+        else:            
+            try:
+                X_data[column] = Imputer(strategy = 'mean', axis = 0).fit_transform(v_values)
+            except:
+                values = [np.unique(-999 if np.isnan(ll).all() else ll) for ll in v_values.reshape(1, -1)]
+                print(column, values)
+                raise
+    
+    if p_scalers is None:
+        p_scalers = {}
+        for column in v_scaleColumns:
+            v_values = X_data[column].value_counts(dropna = True).index.tolist()
+            p_scalers[column] = Scaler().fit(np.array(v_values).reshape(-1, 1))
+    
+    for column in v_scaleColumns:
+        X_data[column] = p_scalers[column].transform(X_data[column].values.reshape(-1, 1) )
+    
+    return X_data, p_scalers

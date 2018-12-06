@@ -130,8 +130,7 @@ def utl_splitMixedColumnValues(p_column, p_values, p_valueUnknown):
     
     #-------------------------------------------------------------------------------------------------------------------
     elif p_column in [ 'LP_LEBENSPHASE_GROB', 'LP_LEBENSPHASE_FEIN', 
-                       'LP_STATUS_GROB', 'LP_STATUS_FEIN',
-                       'LP_FAMILIE_GROB', 'LP_FAMILIE_FEIN' ]:   
+                       'LP_STATUS_FEIN', 'LP_FAMILIE_FEIN' ]:   
         def createKey(p_key, p_valuesList, p_meaning):
             if not p_key in v_keys.keys(): v_keys[p_key] = []
             
@@ -374,7 +373,16 @@ def utl_processColumns(p_data, p_column):
                                                       60:   3, 
                                                       70:   4, 
                                                       80:   5, 
-                                                      90:   6 }).astype(int)
+                                                      90:   6 }).astype(int)        
+
+    elif p_column == 'GEMEINDETYP':
+        p_data[p_column] = p_data[p_column].fillna(-2).replace({ 11:   1, 
+                                                                 12:   2, 
+                                                                 21:   3, 
+                                                                 22:   4, 
+                                                                 30:   5, 
+                                                                 40:   6, 
+                                                                 50:   7 }).astype(int)
     
     # Column 'PRAEGENDE_JUGENDJAHRE_Value_2' contains only 2 values, so we will re-encode it to 0 and 1.
     elif p_column == 'PRAEGENDE_JUGENDJAHRE_Value_2':
@@ -442,7 +450,7 @@ def utl_SplitDate(p_data, p_column, p_newColName = None):
 
 
 #------------------------------------------------------------------------------------------------------------------------------------
-def utl_getValuesCount(p_azdias, p_customers, p_featuresDef):   
+def utl_getValuesCount(p_azdias, p_customers, p_featuresDef, p_display = False):   
     printHeader(f'Extract all values from dataframes: {formatLabel("Azdias")} and {formatLabel("Customers")}.')
     
     def getValues(p_column, p_data):
@@ -470,7 +478,7 @@ def utl_getValuesCount(p_azdias, p_customers, p_featuresDef):
     v_values['_isUnknown'] = v_values[['Value Unknown', 'Value']].apply(v_lambda, axis = 1)
     v_values['Description'] = v_values['Description'].fillna('Not Available')
     v_values = v_values.sort_values(['Column Name', 'Value']).reset_index(drop = True)
-    display(v_values.head(10))
+    if p_display: display(v_values.head(10))
     return v_values
 
 
@@ -492,9 +500,11 @@ def utl_transformDefinition(p_featuresDef):
 
 
 #------------------------------------------------------------------------------------------------------------------------------------
-def utl_cleanDataFrame( p_label, p_data, p_featuresDef, p_categoricalColumns, p_categoricalToProcess, 
-                        p_dummyEncode, p_highlyCorrelated, p_pcaMissingUnknown, p_colMissing, p_colUnknownVals,
-                        p_ignoreScale = [] ):
+def utl_cleanDataFrame( p_label, p_data, p_saveFilenames, 
+                        p_featuresDef = None, p_categoricalColumns = None, p_categoricalToProcess = None, 
+                        p_dummyEncode = None, p_highlyCorrelated = None, p_pcaMissingUnknown = None, p_colMissing = None, 
+                        p_colUnknownVals = None, p_mapValues = None, p_outlierMap = None, p_ignoreScale = None,
+                        p_fillCategorical = True):
     '''
     INPUT:
         p_data           - (pandas dataframe) the dataframe to be cleaned
@@ -524,7 +534,51 @@ def utl_cleanDataFrame( p_label, p_data, p_featuresDef, p_categoricalColumns, p_
         for column in [item for item in p_dummyEncode[p_column] if item not in p_data.columns]:
             p_data[column] = 0
 
-        return p_data
+        return p_data   
+    
+    # Load global variables
+    if p_pcaMissingUnknown is None: 
+        p_pcaMissingUnknown = joblib.load(p_saveFilenames['pcaMissingUnknown'])
+    
+    if p_featuresDef is None: 
+        with open(p_saveFilenames['featuresDef'], 'r') as inFile:
+            p_featuresDef = json.load(inFile)
+    
+    if p_categoricalColumns is None: 
+        with open(p_saveFilenames['categoricalColumns'], 'r') as inFile:
+            p_categoricalColumns = json.load(inFile)
+    
+    if p_categoricalToProcess is None: 
+        with open(p_saveFilenames['categoricalToProcess'], 'r') as inFile:
+            p_categoricalToProcess = json.load(inFile)
+    
+    if p_dummyEncode is None: 
+        with open(p_saveFilenames['dummyEncode'], 'r') as inFile:
+            p_dummyEncode = json.load(inFile)
+    
+    if p_highlyCorrelated is None:
+        with open(p_saveFilenames['highlyCorrelated'], 'r') as inFile:
+            p_highlyCorrelated = json.load(inFile)
+    
+    if p_colMissing is None:
+        with open(p_saveFilenames['colMissing'], 'r') as inFile:
+            p_colMissing = json.load(inFile)
+    
+    if p_colUnknownVals is None:
+        with open(p_saveFilenames['colUnknownVals'], 'r') as inFile:
+            p_colUnknownVals = json.load(inFile)
+    
+    if p_mapValues is None:
+        with open(p_saveFilenames['mapValues'], 'r') as inFile:
+            p_mapValues = json.load(inFile)
+    
+    if p_outlierMap is None:
+        with open(p_saveFilenames['outliers'], 'r') as inFile:
+            p_outlierMap = json.load(inFile)
+    
+    if p_ignoreScale is None:
+        with open(p_saveFilenames['ignoreScale'], 'r') as inFile:
+            p_ignoreScale = json.load(inFile)
     
     #------------------------------------------------------------------------------------------------------------------------
     printHeader(f'START Clean dataframe {formatLabel(p_label)}.')
@@ -544,27 +598,42 @@ def utl_cleanDataFrame( p_label, p_data, p_featuresDef, p_categoricalColumns, p_
         printmd(f'Re-encode column {formatLabel(column)}.')
         utl_processColumns(v_data, column)
         
-        
-    #------------------------------------------------------------------------------------------------------------------------
-    # Re-encode columns having year format
-    for column in [ 'GEBURTSJAHR', 'MIN_GEBAEUDEJAHR', 'EINGEZOGENAM_HH_JAHR', 'EINGEFUEGT_AM_Year' ]:  
-        printmd(f'Re-encode column having year format {formatLabel(column)}.')
-        v_values = v_data[column].value_counts(dropna = True).index.tolist()
-        try:
-            v_values.remove(0)
-        except: None
-        v_min = min(v_values) - 1
-        v_idx = v_data[v_data[column].fillna(0) != 0].index
-        v_data.loc[v_idx, column] = v_data.loc[v_idx, column].apply(lambda x: (int(x) - v_min) / 10 )
-        v_data[column] = v_data[column].fillna(-1)
-        
-        
+                            
     #------------------------------------------------------------------------------------------------------------------------
     # Transform the type for object columns that can be encoded to numeric
     for column in v_data.select_dtypes(include=['object']).columns:
         try:
             v_data[column] = v_data[column].astype(np.float16)
         except: None
+            
+    #------------------------------------------------------------------------------------------------------------------------
+    # Re-encode outliers
+    printmd(f'Re-encode outliers.')
+    for column, mapValue in p_outlierMap['categorical'].items():
+        v_data[column] = v_data[column].replace(mapValue)
+    for column in [ 'ALTER_KIND3', 'ALTER_KIND4' ]:
+        v_data[column] = v_data[column].fillna(-999).apply(lambda x: 0 if x == -999 else 1)        
+    for item in p_outlierMap['non_categorical_min']:
+        v_data[f'_{item[0]}_MIN_{item[1]}'] = v_data[item[0]].fillna(item[1] + 1).apply(lambda x: 0 if x > item[1] else 1)
+        v_data[item[0]] = v_data[item[0]].fillna(item[1] + 1).apply(lambda x: x if x > item[1] else item[1])
+    for item in p_outlierMap['non_categorical_max']:
+        v_data[f'_{item[0]}_MAX_{item[1]}'] = v_data[item[0]].fillna(item[1] - 1).apply(lambda x: 0 if x < item[1] else 1)
+        v_data[item[0]] = v_data[item[0]].fillna(item[1] - 1).apply(lambda x: x if x < item[1] else item[1])
+        
+        
+    #------------------------------------------------------------------------------------------------------------------------
+    # Re-encode columns having year format
+    v_data['GEBURTSJAHR'] = v_data['GEBURTSJAHR'].replace({0: np.NaN})
+    for column in [ 'EINGEZOGENAM_HH_JAHR', 'GEBURTSJAHR', 'MIN_GEBAEUDEJAHR', 'EINGEFUEGT_AM_Year' ]:
+        printmd(f'Re-encode column having year format {formatLabel(column)}.')
+        v_data[column] = v_data[column].fillna(-999).apply(lambda x: np.nan if x == -999 else (x - 1970) / 10)
+        
+        
+    #------------------------------------------------------------------------------------------------------------------------
+    # Apply the mapping
+    for column in p_mapValues.keys():        
+        printmd(f'Apply mapping for column: {formatLabel(column)}.')
+        v_data[column] = v_data[column].replace(p_mapValues[column])
     
     
     #------------------------------------------------------------------------------------------------------------------------
@@ -606,7 +675,6 @@ def utl_cleanDataFrame( p_label, p_data, p_featuresDef, p_categoricalColumns, p_
                     'LP_LEBENSPHASE_GROB_Value_INCOME',
                     'LP_STATUS_FEIN_Value_OTHER' ]:
         v_data[column] = v_data[column].replace({'__NONE': np.NaN})
-    
     for column in p_categoricalToProcess:
         utl_processColumns(v_data, column)
         
@@ -619,11 +687,12 @@ def utl_cleanDataFrame( p_label, p_data, p_featuresDef, p_categoricalColumns, p_
                                p_dummyEncode = p_dummyEncode )
     
     
-    #------------------------------------------------------------------------------------------------------------------------
-    # Fill in categorical columns with -2
-    printmd('Fill in categorical columns with -2.')
-    for column in p_categoricalColumns:
-        v_data[column] = v_data[column].fillna(-2).astype(int)
+    if p_fillCategorical:
+        #------------------------------------------------------------------------------------------------------------------------
+        # Fill in categorical columns with -2
+        printmd('Fill in categorical columns with -2.')
+        for column in p_categoricalColumns:
+            v_data[column] = v_data[column].fillna(-2).astype(int)
     
     
     #------------------------------------------------------------------------------------------------------------------------

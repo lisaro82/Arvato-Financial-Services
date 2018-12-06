@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 from sklearn.metrics import roc_auc_score
 from sklearn.model_selection import KFold  as CVFold
 
@@ -35,7 +38,8 @@ class CustBoostClassifier():
     __dataset_valid__         = None
     __validation__            = None
     __cvScores__              = None
-    __validScores__           = None
+    __validScores__           = None 
+    __bayes_trials__          = None
     
     
     #----------------------------------------------------------------------------------------------------------------
@@ -69,20 +73,21 @@ class CustBoostClassifier():
             self.__trainLGB__(p_params, p_saveFull, p_verbose)
         else:
             raise ValueError(f'Training not implemented for model type: {self.__modelType__}')
-        return
+        return  
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def copyStackModels(self, p_top = 30):
+    def copyStackModels(self, p_top = 30, p_suffix = None):
         print('\n***********************************************************************************************')
         v_now       = datetime.datetime.today().strftime('%Y%m%d_%H%M')
-        v_destDir   = f'{self.__modelName__}_{v_now}'
+        v_destDir   = f"{self.__modelName__}_{v_now}" 
+        if not p_suffix is None: v_destDir += '_' + p_suffix
         v_src_files = f'models/saveTrain/'
         v_stackDir  = f'models/stack/{v_destDir}'
         if not os.path.exists(v_stackDir): os.makedirs(v_stackDir)
 
         for item in self.__bayes_trials__[:p_top]:
-            print(item['iteration'], ' ... ', round(item['scoreValid'], 6), ' ... ', round(item['scoreTest'], 6))
+            print(str(item['iteration']).zfill(4), ' ... ', round(item['scoreValid'], 6), ' ... ', round(item['scoreTest'], 6))
             # Copy the models to the stack folder
             for idx in range(self.__cvSplits__):
                 v_fileName = f'model_{self.__modelName__}_{item["iteration"]}_{idx + 1}.txt'
@@ -90,6 +95,7 @@ class CustBoostClassifier():
                 shutil.copy(v_fileName, v_stackDir)
                 
         return v_destDir
+    
     
     #----------------------------------------------------------------------------------------------------------------
     def predictStack(self, p_folder, X_data, y_data = None, p_showPlot = False):
@@ -208,7 +214,7 @@ class CustBoostClassifier():
             y_pred  = bst.predict(X_valid)
             v_score = roc_auc_score(y_valid, y_pred)
             self.__models__.append(bst)
-            self.__validScores__.append(v_score)
+            self.__validScores__.append(v_score)            
         return
     
     
@@ -217,7 +223,8 @@ class CustBoostClassifier():
         """ Returns a copy of the fead raw data. """ 
         if len(self.__selected_featuresIni__) == 0: return X_data.copy()
             
-        if p_train:
+        if ( p_train
+             or self.__feature_name__ is None ):
             self.__feature_name__ = [item for item in X_data.columns if item in self.__selected_featuresIni__]
             
         return X_data[self.__feature_name__].copy()
