@@ -193,7 +193,13 @@ class CustBoostClassifier():
         """ Returns the validation mean validation score for the models linked to the current instance of the class. """
         v_scores = [ self.__stackScore__[key] 
                        for key in list(self.__stackScore__.keys())[:(len(self.__stackScore__) - p_dropLast)] ]
-        return np.mean(v_scores)
+        return np.mean(v_scores) 
+    
+    
+    #----------------------------------------------------------------------------------------------------------------
+    def getOneModel(self):
+        """ Returns the first trained model in the stack. """
+        return self.__models__[0]
     
     
     #----------------------------------------------------------------------------------------------------------------
