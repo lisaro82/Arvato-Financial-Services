@@ -13,7 +13,8 @@ import datetime
 import shutil
 import os
 
-import lightgbm as lgb
+import lightgbm as lgb    
+from collections import OrderedDict
 
 
 class CustBoostClassifier():
@@ -38,7 +39,8 @@ class CustBoostClassifier():
     __dataset_valid__         = None
     __validation__            = None
     __cvScores__              = None
-    __validScores__           = None 
+    __validScores__           = None    
+    __stackScore__            = None 
     __bayes_trials__          = None
     
     
@@ -77,7 +79,7 @@ class CustBoostClassifier():
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def copyStackModels(self, p_top = 30, p_suffix = None):
+    def copyStackModels(self, p_top = 30, p_suffix = None, p_debug = False):
         print('\n***********************************************************************************************')
         v_now       = datetime.datetime.today().strftime('%Y%m%d_%H%M')
         v_destDir   = f"{self.__modelName__}_{v_now}" 
@@ -87,7 +89,13 @@ class CustBoostClassifier():
         if not os.path.exists(v_stackDir): os.makedirs(v_stackDir)
 
         for item in self.__bayes_trials__[:p_top]:
-            print(str(item['iteration']).zfill(4), ' ... ', round(item['scoreValid'], 6), ' ... ', round(item['scoreTest'], 6))
+            if p_debug: print(str(item['iteration']).zfill(4), ' ... ', round(item['scoreValid'], 6), ' ... ', round(item['scoreTest'], 6))
+            
+            # Copy the score for the models
+            v_fileName = f'model_{self.__modelName__}_{item["iteration"]}_score.json'
+            v_fileName = os.path.join(v_src_files, v_fileName)
+            shutil.copy(v_fileName, v_stackDir)
+            
             # Copy the models to the stack folder
             for idx in range(self.__cvSplits__):
                 v_fileName = f'model_{self.__modelName__}_{item["iteration"]}_{idx + 1}.txt'
@@ -98,7 +106,7 @@ class CustBoostClassifier():
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def predictStack(self, p_folder, X_data, y_data = None, p_showPlot = False):
+    def predictStack(self, p_folder, X_data, y_data = None, p_dropLast = 0, p_showPlot = False):
         """ Function used to load all the models that will be used to create the predictions. """ 
         self.__models__ = []
         for folder in p_folder:
@@ -144,12 +152,18 @@ class CustBoostClassifier():
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def predictProba(self, X_data, y_data = None, p_showPlot = False):  
+    def predictProba(self, X_data, y_data = None, p_dropLast = 0, p_showPlot = False):  
         """ Returns the mean predictions for the models linked to the current instance of the class. """  
         X_data = self.__scaleData__(X_data)
         
+        if p_dropLast == 0:
+            v_models = self.__models__
+        else:
+            v_idx = list(self.__stackScore__.keys())[:(len(self.__stackScore__) - p_dropLast)]
+            v_models = [ self.__models__[idx] for idx in range(len(self.__models__)) if idx in v_idx ]
+        
         y_pred = None
-        for model in self.__models__:
+        for model in v_models:
             if self.__modelType__ == 'lightgbm':
                 y_predTmp = model.predict(X_data)  
             else:
@@ -175,9 +189,11 @@ class CustBoostClassifier():
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def getScore(self):
-        """ Returns the validation mean validation score for the models linked to the current instance of the class. """ 
-        return np.mean(self.__validScores__)
+    def getScore(self, p_dropLast = 0):
+        """ Returns the validation mean validation score for the models linked to the current instance of the class. """
+        v_scores = [ self.__stackScore__[key] 
+                       for key in list(self.__stackScore__.keys())[:(len(self.__stackScore__) - p_dropLast)] ]
+        return np.mean(v_scores)
     
     
     #----------------------------------------------------------------------------------------------------------------
@@ -214,7 +230,15 @@ class CustBoostClassifier():
             y_pred  = bst.predict(X_valid)
             v_score = roc_auc_score(y_valid, y_pred)
             self.__models__.append(bst)
-            self.__validScores__.append(v_score)            
+            self.__validScores__.append(v_score) 
+            
+        self.__stackScore__ = {idx: self.__validScores__[idx] for idx in range(len(self.__validScores__))}
+        self.__stackScore__ = OrderedDict(sorted(self.__stackScore__.items(), key = lambda kv: kv[1], reverse = True))
+        
+        v_fileName = f'models/saveTrain/model_{self.__modelName__}_{p_sufix}_score'
+        with open(f'{v_fileName}.json', 'w+') as outFile:
+            json.dump(self.__stackScore__, outFile)
+                       
         return
     
     
@@ -282,7 +306,8 @@ class CustBoostClassifier():
         from timeit import default_timer as timer
         
         # File to save results
-        v_fileName = f'models/gbm_trials/model_{self.__modelName__}.csv'
+        v_now      = datetime.datetime.today().strftime('%Y%m%d_%H%M')
+        v_fileName = f'models/gbm_trials/model_{self.__modelName__}_{v_now}.csv'
         v_fopen    = open(v_fileName, 'w')
         v_writer   = csv.writer(v_fopen)
         
@@ -313,8 +338,10 @@ class CustBoostClassifier():
                                p_verbose         = False )
             v_run_time = timer() - v_start
             
-            v_scoreValid = self.getScore()             
-            v_predTest   = self.predictProba(X_test)
+            v_dropLast   = 3
+            v_scoreValid = self.getScore(v_dropLast)             
+            v_predTest   = self.predictProba( X_data    = X_test,
+                                             p_dropLast = v_dropLast )
             v_scoreTest  = roc_auc_score(y_test, v_predTest)               
             self.__cvScores__[self.ITERATION] = { 'valid': v_scoreValid,
                                                   'test':  v_scoreTest }             

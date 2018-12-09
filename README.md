@@ -79,6 +79,11 @@ We start our data exploration by checking the number of rows and features that c
 [numberOfRows]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/numberOfRows.png "Number of rows in the general population and the customers dataset"
 ![alt text][numberOfRows]
 
+We also check all the distinct values for the different features in both datasets, and their distribution.
+
+[columnValues]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/columnValues.jpg "columnValues.jpg"
+![alt text][columnValues]
+
 #### Analysis of categorical features
 
 The analysis of categorical features consists in identifying the features that act as categories and should be considered as such.
@@ -174,25 +179,24 @@ An outlier is an observation point that is distant from other observations.
 
 We will be using the IQR (interquartile range) method in order to identify the outliers. We will apply a threshold of two times the IQR in order to define the minimum and maximum limits for acceptable values.
 
-[outliers_01]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_01.png "outliers_01"
-![alt text][outliers_01]
+[outliers_General]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_General.png "outliers_General"
+![alt text][outliers_General]
 
 We will remap the following categorical features:
    - ALTERSKATEGORIE_GROB - age through first name analysis
 
-[outliers_02]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_02.png "outliers_02"
-![alt text][outliers_02]
+[outliers_ALTERSKATEGORIE_GROB]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_ALTERSKATEGORIE_GROB.png "outliers_ALTERSKATEGORIE_GROB"
+![alt text][outliers_ALTERSKATEGORIE_GROB]
 
-   - ARBEIT - share of unemployed person in the community
+   - ARBEIT - share of unemployed person in the community   
 
-[outliers_03]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_03.png "outliers_03"
-![alt text][outliers_03]
+[outliers_ARBEIT]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_ARBEIT.png "outliers_ARBEIT"
+![alt text][outliers_ARBEIT]
 
-   - KOMBIALTER - unknown description
+   - KOMBIALTER - unknown description 
 
-[outliers_04]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_04.png "outliers_04"
-![alt text][outliers_04]
-
+[outliers_KOMBIALTER]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/outliers_KOMBIALTER.png "outliers_KOMBIALTER"
+![alt text][outliers_KOMBIALTER]
 
 For column ALTER_KIND3 and ALTER_KIND4 we will just keep the information linked to the fact that the column is filled-in or not. 
 
@@ -313,12 +317,15 @@ We decide to drop the following columns:
 
 Clustering is a method of unsupervised learning, where each datapoint or cluster is grouped to into a subset or a cluster, which contains similar kind of data points.
 
-We will first use the PCA in order to reduce the dimensionamity of our dataset and than we will create a GMM (Gaussian Mixture Model) model. 
+We will first use the PCA in order to reduce the dimensionamity of our dataset and than we will create a GMM (Gaussian Mixture Model) models and KMean models. 
 
-A Gaussian mixture model is a probabilistic model that assumes all the data points are generated from a mixture of a finite number of Gaussian distributions with unknown parameters. The GMM is different from K-Means as it will not try to Hard assign data points to a cluster, but rather will use the probability of a sample to determine the feasibility of it belonging to a cluster.
+A Gaussian mixture model is a probabilistic model that assumes all the data points are generated from a mixture of a finite number of Gaussian distributions with unknown parameters. 
 
-The main avantage for using this type of clustering on our dataset is that it will not bias the cluster sizes to have specific structures as does K-Means (Circular).
+The GMM is different from K-Means as it will not try to Hard assign data points to a cluster, but rather will use the probability of a sample to determine the feasibility of it belonging to a cluster.
 
+K-means clustering is a type of unsupervised learning, which is used when you have unlabeled data (i.e., data without defined categories or groups). The goal of this algorithm is to find groups in the data, with the number of groups represented by the variable K. The algorithm works iteratively to assign each data point to one of K groups based on the features that are provided. Data points are clustered based on feature similarity. The results of the K-means clustering algorithm are:
+    - The centroids of the K clusters, which can be used to label new data
+    - Labels for the training data (each data point is assigned to a single cluster)
 
 #### Supervised modeling
 
@@ -330,9 +337,9 @@ We will start by searching the best hyperparamaters for models using all availab
 
 Once we have a list of optimized hyperparamaters, we will choose the first 10 and calculate the most important features. All these models will be trained on the exact same stratified splits.
 
-We than choose the first 30 features and do a new search for the optimal parameters.
+We will also verify which are the most important 30 features.
 
-The final stacking will be done on a combination of models trained with all the features and with only the first 30 more important features.
+The final stacking will be done on a combination of models trained with all the features and having the worst performerm in the cross-validation dropped.
 
 
 ### 2.3. Benchmark
@@ -379,18 +386,74 @@ For the unsupervised model we also execute the following suplementary steps:
 [preprocessing_05]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/preprocessing_05.png "preprocessing_05"
 ![alt text][preprocessing_05]
 
-Before calculating the 
 
----------
-All preprocessing steps have been clearly documented. Abnormalities or characteristics about the data or input that needed to be addressed have been corrected. If no data preprocessing is necessary, it has been clearly justified.
+## 3.2. Implementation for unsupervised model
 
-In this section, all of your preprocessing steps will need to be clearly documented, if any were necessary. From the previous section, any of the abnormalities or characteristics that you identified about the dataset will be addressed and corrected here. Questions to ask yourself when writing this section:
+In order to create the clusters for our data, we start by fitting two GMM models, with covarience type TIED and FULL.
 
-    If the algorithms chosen require preprocessing steps like feature selection or feature transformations, have they been properly documented?
-    Based on the Data Exploration section, if there were abnormalities or characteristics that needed to be addressed, have they been properly corrected?
-    If no preprocessing is needed, has it been made clear why?
+For these models we check the AIC and BIC results. In order to decide to use a GMM model, we must see that a global optimum is being found by the algorithm. In case no global optimum is found, than we can consider that the dataset is not a combination of gaussians and we should rather use a different type of model.
 
-## 3.2. Implementation
+[cluster_GMM_AIC]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_GMM_AIC.png "cluster_GMM_AIC"
+![alt text][cluster_GMM_AIC]
+
+[cluster_GMM_BIC]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_GMM_BIC.png "cluster_GMM_BIC"
+![alt text][cluster_GMM_BIC]
+
+Based on the above visualizations we can see that the models could not find a global optimum, but rather only a local one.
+
+We will than start fitting two KMeans models, one fitted on 100 reduced dimensions, and another one on 150 reduced dimensions. We than compare their calculated BIC score with the BIC score of the most performant GMM model (covariance type FULL).
+
+[cluster_KMean_BIC]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_BIC.png "cluster_KMean_BIC"
+![alt text][cluster_KMean_BIC]
+
+We see that the most performant model is a KMean fitted on 100 reduced dimensions. We check the inertia for the fitting on a range of clusters between 2 and 18.
+
+[cluster_KMean_100_inertia]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_inertia.png "cluster_KMean_100_inertia"
+![alt text][cluster_KMean_100_inertia]
+
+Based on the above graphic we can see that the number of clusters should be either 4 or 5, so we calculate some detailed statistics on KMean models fitted on 3, 4 or 5 clusters.
+
+[cluster_KMean_100_heatmap]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_heatmap.png "cluster_KMean_100_heatmap"
+![alt text][cluster_KMean_100_heatmap]
+
+[cluster_KMean_100_barplot]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_barplot.png "cluster_KMean_100_barplot"
+![alt text][cluster_KMean_100_barplot]
+
+[cluster_KMean_100_3_dist]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_3_dist.png "cluster_KMean_100_3_dist"
+![alt text][cluster_KMean_100_3_dist]    
+
+[cluster_KMean_100_4_dist]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_4_dist.png "cluster_KMean_100_4_dist"
+![alt text][cluster_KMean_100_4_dist]     
+
+[cluster_KMean_100_5_dist]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_5_dist.png "cluster_KMean_100_5_dist"
+![alt text][cluster_KMean_100_5_dist]
+
+We also do a calculation of the optimum number of clusters by using the Elbow Method.
+
+[cluster_KMean_100_elbow]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_elbow.png "cluster_KMean_100_elbow"
+![alt text][cluster_KMean_100_elbow]
+
+Based on the above calculation we decide to use a **KMean model** fitted on **100 reduced dimensions** with **5 clusters**.
+
+We also decide to check the profiles for the most significative clusters for the customers.
+
+[cluster_KMean_100_cluster_0_01]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_cluster_0_01.png "cluster_KMean_100_cluster_0_01"
+![alt text][cluster_KMean_100_cluster_0_01]
+
+[cluster_KMean_100_cluster_0_02]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_cluster_0_02.png "cluster_KMean_100_cluster_0_02"
+![alt text][cluster_KMean_100_cluster_0_02]
+
+[cluster_KMean_100_cluster_2_01]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_cluster_2_01.png "cluster_KMean_100_cluster_2_01"
+![alt text][cluster_KMean_100_cluster_2_01]
+
+[cluster_KMean_100_cluster_2_02]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_cluster_2_02.png "cluster_KMean_100_cluster_2_02"
+![alt text][cluster_KMean_100_cluster_2_02]       
+
+[cluster_KMean_100_cluster_3_01]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_cluster_3_01.png "cluster_KMean_100_cluster_3_01"
+![alt text][cluster_KMean_100_cluster_3_01]
+
+[cluster_KMean_100_cluster_3_02]: https://github.com/lisaro82/Arvato-Financial-Services/blob/master/screenShots/cluster_KMean_100_cluster_3_02.png "cluster_KMean_100_cluster_3_02"
+![alt text][cluster_KMean_100_cluster_3_02]
 
 ---------
 The process for which metrics, algorithms, and techniques were implemented with the given datasets or input data has been thoroughly documented. Complications that occurred during the coding process are discussed.
@@ -399,18 +462,10 @@ In this section, the process for which metrics, algorithms, and techniques that 
 
     Is it made clear how the algorithms and techniques were implemented with the given datasets or input data?
     Were there any complications with the original metrics or techniques that required changing prior to acquiring a solution?
-    Was there any part of the coding process (e.g., writing complicated functions) that should be documented?
+    Was there any part of the coding process (e.g., writing complicated functions) that should be documented?  
 
-## 3.3. Refinement
 
----------
-The process of improving upon the algorithms and techniques used is clearly documented. Both the initial and final solutions are reported, along with intermediate solutions, if necessary.
-
-In this section, you will need to discuss the process of improvement you made upon the algorithms and techniques you used in your implementation. For example, adjusting parameters for certain models to acquire improved solutions would fall under the refinement category. Your initial and final solutions should be reported, as well as any significant intermediate results as necessary. Questions to ask yourself when writing this section:
-
-    Has an initial solution been found and clearly reported?
-    Is the process of improvement clearly documented, such as what techniques were used?
-    Are intermediate and final solutions clearly reported as the process is improved?
+## 3.3. Implementation for supervised model
 
 
 ## 4. Results

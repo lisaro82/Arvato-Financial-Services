@@ -611,10 +611,8 @@ def utl_cleanDataFrame( p_label, p_data, p_saveFilenames,
     #------------------------------------------------------------------------------------------------------------------------
     # Re-encode outliers
     printmd(f'Re-encode outliers.')
-    for column, mapValue in { "ALTERSKATEGORIE_GROB": {9: 5}, 
-                              "ARBEIT":               {9: 5}, 
-                              "KOMBIALTER":           {9: 5} }.items():
-        v_data[column] = v_data[column].replace(mapValue)
+    for column, mapValue in p_outlierMap['categorical'].items():
+        v_data[column] = v_data[column].astype(str).replace(mapValue).astype(float)
     for column in [ 'ALTER_KIND3', 'ALTER_KIND4' ]:
         v_data[column] = v_data[column].fillna(-999).apply(lambda x: 0 if x == -999 else 1)        
     for item in p_outlierMap['non_categorical_min']:
@@ -637,7 +635,7 @@ def utl_cleanDataFrame( p_label, p_data, p_saveFilenames,
     # Apply the mapping
     for column in p_mapValues.keys():        
         printmd(f'Apply mapping for column: {formatLabel(column)}.')
-        v_data[column] = v_data[column].replace(p_mapValues[column])
+        v_data[column] = v_data[column].astype(str).replace(p_mapValues[column]).astype(float)
     
     
     #------------------------------------------------------------------------------------------------------------------------
