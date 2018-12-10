@@ -106,26 +106,35 @@ class CustBoostClassifier():
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def predictStack(self, p_folder, X_data, y_data = None, p_dropLast = 0, p_showPlot = False):
+    def __loadModels__(self, p_folder, p_dropLast):
         """ Function used to load all the models that will be used to create the predictions. """ 
         self.__models__ = []
         for folder in p_folder:
             for (dirpath, dirnames, filenames) in os.walk(f'models/stack/{folder}'):
-                for filename in filenames:    
-                    bst = lgb.Booster(model_file = f'{dirpath}/{filename}')
-                    self.__models__.append(bst)
-        return self.predictProba(X_data, y_data, p_showPlot) 
+                for filename in filenames:  
+                    if filename[-5:] == '.json':
+                        with open(f'{dirpath}/{filename}', 'r') as inFile:
+                            v_scores = json.load(inFile)                            
+                            v_idx = list(v_scores.keys())[:(len(v_scores) - p_dropLast)]
+                            v_idx = [str(int(idx) + 1) for idx in v_idx]
+                            for modelFile in [ filename.replace('_score.json', f'_{idx}.txt') for idx in v_idx ]:
+                                bst = lgb.Booster(model_file = f'{dirpath}/{modelFile}')
+                                self.__models__.append(bst)
+        return
     
     
     #----------------------------------------------------------------------------------------------------------------
-    def featureImportanceStack(self, p_folder, p_top = 30):
+    def predictStack(self, p_folder, X_data, y_data = None, p_dropLast = 0, p_showPlot = False):
+        """ Load all models and return the predictions. """ 
+        self.__loadModels__(p_folder, p_dropLast)
+        print(f'Number of models to be used: {len(self.__models__)}.')
+        return self.predictProba(X_data, y_data, 0, p_showPlot) 
+    
+    
+    #----------------------------------------------------------------------------------------------------------------
+    def featureImportanceStack(self, p_folder, p_top = 30, p_dropLast = 0):
         """ Function used to load all the models that will be used to create the predictions. """ 
-        self.__models__ = []
-        for folder in p_folder:
-            for (dirpath, dirnames, filenames) in os.walk(f'models/stack/{folder}'):
-                for filename in filenames:    
-                    bst = lgb.Booster(model_file = f'{dirpath}/{filename}')
-                    self.__models__.append(bst)
+        self.__loadModels__(p_folder, p_dropLast)   
                     
         v_return = None
         v_count = 0
